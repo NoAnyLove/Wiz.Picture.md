@@ -51,12 +51,12 @@
             margin-top: 90px;
         }
         
-        ul {
+        #log {
             list-style: square;
             /*            padding-left: 5px;*/
         }
         
-        #info>ul {
+        #info ul {
             list-style: none;
             padding-left: 10px;
             margin-top: 5px;
@@ -66,6 +66,14 @@
         body {
             font-family: "Microsoft Yahei";
             margin: 0;
+        }
+        
+        .failed {
+            color: orangered;
+        }
+        
+        .downloading {
+            color: blue;
         }
     </style>
 </head>
@@ -174,23 +182,28 @@
         switch (action) {
         case 0: // no attachment
             logLine = `<strong>[${documentName}]</strong> ${localStrLog0}`;
+            log.innerHTML += `<li>${logLine}</li>`;
             break;
         case 1: // attachment is already downloaded
             logLine = `<strong>[${documentName}]</strong>--><i>(${attachmentName})</i> ${localStrLog1}`;
+            log.innerHTML += `<li>${logLine}</li>`;
             break;
         case 2: // start to download attachment
             logLine = `<strong>[${documentName}]</strong>-->${localStrLog2} <i>(${attachmentName})</i>`;
+            log.innerHTML += `<li class="downloading">${logLine}</li>`;
             break;
         case 3: // failed to download attachment
             logLine = `<strong>[${documentName}]</strong>-->${localStrLog3} <i>(${attachmentName})</i>`;
+            log.innerHTML += `<li class="failed">${logLine}</li>`;
             break;
         case 4: // attachment is not picture
             logLine = `<strong>[${documentName}]</strong>--><i>(${attachmentName})</i> ${localStrLog4}`;
+            log.innerHTML += `<li>${logLine}</li>`;
             break;
         default:
             alert("error occurs on logging");
         }
-        log.innerHTML += `<li>${logLine}</li>`;
+
     }
 
     var objApp = window.external;
