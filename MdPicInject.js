@@ -11,6 +11,10 @@ function MdPic_init(app, pluginBrowser) {
     MdPic_config_autodownload = MdPic_ReadConfig("AutoDownloadPicture") == "1";
     var attachments = MdPic_get_attachments();
 
+    /*
+     * Wiz Markdown Rendering doesn't offer a callback when rendering is complete.
+     * So we use MutationObserver to monitor the rendering process.
+     */
     var observer = new MutationObserver(function (mutations) {
         MdPic_update_img(attachments);
     });
