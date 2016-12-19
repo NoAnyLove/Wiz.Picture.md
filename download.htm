@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Download All</title>
+    <style>
+        #box {
+            height: 360px;
+        }
+        
+        #progressBar {
+            position: relative;
+            width: 100%;
+            height: 30px;
+            background-color: #dddddd;
+        }
+        
+        #bar {
+            position: absolute;
+            width: 1%;
+            height: 100%;
+            background-color: CornflowerBlue;
+        }
+        
+        #progressLabel {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            z-index: 1;
+        }
+        
+        #info {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            background-color: Aqua;
+        }
+        
+        #info>p {
+            padding-left: 10px;
+        }
+        
+        #logBox {
+            width: 100%;
+            height: 100%;
+            overflow-y: scroll;
+            overflow-x: auto;
+            margin-top: 90px;
+        }
+        
+        ul {
+            list-style: square;
+            /*            padding-left: 5px;*/
+        }
+        
+        body {
+            font-family: "Microsoft Yahei";
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="box">
+        <div id="info">
+            <p>Total Selected Documents: <span id="totalDocuments"></span>, Total Selected Attachments: <span id="totalAttachments"></span>
+            </p>
+            <p>Total Downloaded Attachments: <span id="totalDownloaded"></span>, Total Failed Attachments: <span id="totalFailed"></span>
+            </p>
+        </div>
+        <!--
+        <div id="progressBar">
+    <div id="progressLabel">0/0</div>
+    <div id="bar">
+    </div>
+</div>
+-->
+        <div id="logBox">
+            <ul id="log"></ul>
+        </div>
+    </div>
+</body>
+<script>
+    function $(selector) {
+        return document.querySelector(selector)
+    }
+
+    function isPicture(name) {
+        if (name.match(/\.(jpg|jpeg|jpe|jfif|png|gif|bmp|dib|tif|tiff|psd|svg|ai|eps|ps|cur|ico)$/)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    //    function updateProgress(total, progress) {
+    //        var bar = $("#bar");
+    //        var progressLabel = $("#progressLabel");
+    //        bar.style.width = progress / total * 100 + "%";
+    //        progressLabel.innerText = `${progress}/${total}`;
+    //    }
+
+    function parseDocuments(objDocuments) {
+        var result = [];
+        for (var i = 0; i < objDocuments.Count; i++) {
+            result.push(objDocuments.Item(i));
+        }
+        return result;
+    }
+
+    function getDocumentsFromFolder(objFolder) {
+        var result = [];
+        result = result.concat(parseDocuments(objFolder.Documents));
+        for (var i = 0; i < objFolder.Folders.Count; i++) {
+            result = result.concat(getDocumentsFromFolder(objFolder.Folders.Item(i)));
+        }
+        return result;
+    }
+
+    function getSelectedDocuments(initParam) {
+        var selectedDocuments = null;
+        var result = [];
+        if (initParam == 1 || initParam == 3) { // Select Documents
+            selectedDocuments = objDocumentsCtrl.SelectedDocuments;
+            if (selectedDocuments.Count == 0) {
+                alert("No Selected Documents");
+            } else {
+                result = parseDocuments(selectedDocuments);
+            }
+        } else if (initParam == 2 || initParam == 4) { // Select Folder
+            if (objCategoryCtrl.SelectedFolder) {
+                result = getDocumentsFromFolder(objCategoryCtrl.SelectedFolder);
+            } else {
+                alert("No Selected Folder");
+            }
+        } else {
+            alert("Error initParam");
+        }
+        return result;
+    }
+
+    //    function addLog(logLine) {
+    //        var log = $("#log");
+    //        log.innerHTML += `<li>${logLine}</li>`;
+    //    }
+
+    function addLog(documentName, attachmentName, action) {
+        var log = $("#log");
+        var logLine;
+        switch (action) {
+        case 0: // no attachment
+            logLine = `<strong>[${documentName}]</strong> has 0 attachment`;
+            break;
+        case 1: // attachment is already downloaded
+            logLine = `<strong>[${documentName}]</strong>--><i>(${attachmentName})</i> has already been downloaded`;
+            break;
+        case 2: // start to download attachment
+            logLine = `<strong>[${documentName}]</strong>-->Downloading <i>(${attachmentName})</i>`;
+            break;
+        case 3: // failed to download attachment
+            logLine = `<strong>[${documentName}]</strong>-->Failed to download <i>(${attachmentName})</i>`;
+            break;
+        case 4: // attachment is not picture
+            logLine = `<strong>[${documentName}]</strong>--><i>(${attachmentName})</i> is not a picture`;
+            break;
+        default:
+            alert("error occurs on logging");
+        }
+        log.innerHTML += `<li>${logLine}</li>`;
+    }
+
+    var objApp = window.external;
+    var objWindow = objApp.Window;
+    var objDocumentsCtrl = objWindow.DocumentsCtrl;
+    var objCategoryCtrl = objWindow.CategoryCtrl;
+
+    /*
+     * initParam
+     * 1--Select documents and download all attachments
+     * 2--Select folder and download all attachmetns
+     * 3--Select documents and download all picture attachments
+     * 4--Select folder and download all picture attachments
+     */
+    var initParam = objWindow.GetHtmlDialogParam(WizChromeBrowser);
+    console.debug(`initParam=${initParam}`);
+
+    var selectedDocuments = getSelectedDocuments(initParam);
+
+    //
+    var totalDocuments = 0;
+    var totalAttachments = 0;
+    var totalDownloaded = 0;
+    var totalFailed = 0;
+
+    //    var allDownloaded = true;
+
+    //    var documentList = [];
+    //    if (selectedDocuments) {
+    //        totalDocuments = selectedDocuments.Count;
+    //        for (var i = 0; i < selectedDocuments.Count; i++) {
+    //            var objDocument = selectedDocuments.Item(i);
+    //            if (objDocument.AttachmentCount > 0) {
+    //                documentList.push(objDocument);
+    //                totalAttachments += objDocument.AttachmentCount;
+    //                console.log(`[${objDocument.Title}] has attachments`);
+    //            } else {
+    //                addLog(`<strong>[${objDocument.Title}]</strong> has NO attachment`)
+    //            }
+    //        }
+    //        console.log(`totalDocuments=${totalDocuments}, totalAttachments=${totalAttachments}`);
+    //        console.log(documentList.length);
+
+    if (selectedDocuments) {
+        totalDocuments = selectedDocuments.length;
+        for (var i = 0; i < selectedDocuments.length; i++) {
+            var objDocument = selectedDocuments[i];
+            if (objDocument.AttachmentCount > 0) {
+                totalAttachments += objDocument.AttachmentCount;
+                var objAttachments = objDocument.Attachments;
+                for (var j = 0; j < objAttachments.Count; j++) {
+                    var objAttachment = objAttachments.Item(j);
+
+                    if (objAttachment.Downloaded) {
+                        // attachment is already downloaded
+                        addLog(objDocument.Title, objAttachment.Name, 1);
+                    } else {
+                        if ((initParam == 3 || initParam == 4) && !isPicture(objAttachment.Name)) {
+                            addLog(objDocument.Title, objAttachment.Name, 4);
+                            continue;
+                        }
+                        // start to download attachment
+                        addLog(objDocument.Title, objAttachment.Name, 2);
+                        objAttachment.CheckAttachmentData(objWindow.HWND);
+                        // Double check if it's successful
+                        if (objAttachment.Downloaded) {
+                            // successfully download attachment
+                            addLog(objDocument.Title, objAttachment.Name, 1);
+                            totalDownloaded++;
+                        } else {
+                            // failed to download attachment
+                            addLog(objDocument.Title, objAttachment.Name, 3);
+                            totalFailed++;
+                            //                            allDownloaded = false;
+                        }
+                    }
+                    //                updateProgress(totalAttachments, i + 1);
+                }
+            } else {
+                // no attachment
+                addLog(objDocument.Title, "", 0);
+            }
+        }
+    }
+    // Update stats
+    $("#totalDocuments").innerText = totalDocuments;
+    $("#totalAttachments").innerText = totalAttachments;
+    $("#totalDownloaded").innerText = totalDownloaded;
+    $("#totalFailed").innerText = totalFailed;
+
+    if (totalFailed == 0) {
+        objWindow.ShowMessage("All Selected Attachments are downloaded", "Success", 0);
+    }
+</script>
+
+</html>
