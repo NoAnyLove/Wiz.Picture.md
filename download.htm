@@ -105,6 +105,18 @@
         }
     }
 
+    function getString(id) {
+        var pluginPath = objApp.GetPluginPathByScriptFileName("MdPicGlobal.js");
+        var languageFileName = pluginPath + "plugin.ini";
+        var strLanguage;
+        try {
+            var strLanguage = objApp.LoadStringFromFile(languageFileName, id);
+        } catch (e) {
+            alert(e);
+        }
+        return strLanguage
+    }
+
     //    function updateProgress(total, progress) {
     //        var bar = $("#bar");
     //        var progressLabel = $("#progressLabel");
@@ -161,19 +173,19 @@
         var logLine;
         switch (action) {
         case 0: // no attachment
-            logLine = `<strong>[${documentName}]</strong> has 0 attachment`;
+            logLine = `<strong>[${documentName}]</strong> ${localStrLog0}`;
             break;
         case 1: // attachment is already downloaded
-            logLine = `<strong>[${documentName}]</strong>--><i>(${attachmentName})</i> has already been downloaded`;
+            logLine = `<strong>[${documentName}]</strong>--><i>(${attachmentName})</i> ${localStrLog1}`;
             break;
         case 2: // start to download attachment
-            logLine = `<strong>[${documentName}]</strong>-->Downloading <i>(${attachmentName})</i>`;
+            logLine = `<strong>[${documentName}]</strong>-->${localStrLog2} <i>(${attachmentName})</i>`;
             break;
         case 3: // failed to download attachment
-            logLine = `<strong>[${documentName}]</strong>-->Failed to download <i>(${attachmentName})</i>`;
+            logLine = `<strong>[${documentName}]</strong>-->${localStrLog3} <i>(${attachmentName})</i>`;
             break;
         case 4: // attachment is not picture
-            logLine = `<strong>[${documentName}]</strong>--><i>(${attachmentName})</i> is not a picture`;
+            logLine = `<strong>[${documentName}]</strong>--><i>(${attachmentName})</i> ${localStrLog4}`;
             break;
         default:
             alert("error occurs on logging");
@@ -185,6 +197,17 @@
     var objWindow = objApp.Window;
     var objDocumentsCtrl = objWindow.DocumentsCtrl;
     var objCategoryCtrl = objWindow.CategoryCtrl;
+
+    var pluginPath = objApp.GetPluginPathByScriptFileName("MdPicGlobal.js");
+    var languageFileName = pluginPath + "plugin.ini";
+    objApp.LocalizeHtmlDocument(languageFileName, WizChromeBrowser);
+
+    // pre-load localized string
+    var localStrLog0 = getString("log0");
+    var localStrLog1 = getString("log1");
+    var localStrLog2 = getString("log2");
+    var localStrLog3 = getString("log3");
+    var localStrLog4 = getString("log4");
 
     /*
      * initParam
@@ -270,7 +293,8 @@
     $("#totalFailed").innerText = totalFailed;
 
     if (totalFailed == 0) {
-        objWindow.ShowMessage("All Selected Attachments are downloaded", "Success", 0);
+        var strHint = getString("hintAllDownload");
+        objWindow.ShowMessage(strHint, "", 0);
     }
 </script>
 
