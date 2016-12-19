@@ -36,7 +36,7 @@
             top: 0px;
             left: 0px;
             width: 100%;
-            background-color: Aqua;
+            background-color: LightBlue;
         }
         
         #info>p {
@@ -56,6 +56,13 @@
             /*            padding-left: 5px;*/
         }
         
+        #info>ul {
+            list-style: none;
+            padding-left: 10px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+        
         body {
             font-family: "Microsoft Yahei";
             margin: 0;
@@ -66,10 +73,12 @@
 <body>
     <div id="box">
         <div id="info">
-            <p>Total Selected Documents: <span id="totalDocuments"></span>, Total Selected Attachments: <span id="totalAttachments"></span>
-            </p>
-            <p>Total Downloaded Attachments: <span id="totalDownloaded"></span>, Total Failed Attachments: <span id="totalFailed"></span>
-            </p>
+            <ul>
+                <li><span id="labelNumberOfSelectedDocuments">Number of Selected Documents: </span><span id="totalDocuments"></span></li>
+                <li><span id="labelNumberOfSelectedAttachments">Number of Selected Attachments: </span><span id="totalAttachments"></span></li>
+                <li><span id="labelNumberOfDownloadedAttachments">Number of Downloaded Attachments: </span><span id="totalDownloaded"></span></li>
+                <li><span id="labelNumberOfFailedAttachments">Number of Failed Attachments: </span><span id="totalFailed"></span></li>
+            </ul>
         </div>
         <!--
         <div id="progressBar">
