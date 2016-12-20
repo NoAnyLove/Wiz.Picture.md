@@ -53,7 +53,6 @@
         
         #log {
             list-style: square;
-            /*            padding-left: 5px;*/
         }
         
         #info ul {
@@ -236,7 +235,6 @@
         var localStrLog3 = getString("log3");
         var localStrLog4 = getString("log4");
 
-        // closure function
         function addLog(documentName, attachmentName, action) {
             var log = $("#log");
             var logLine;
@@ -266,81 +264,18 @@
             }
         }
 
-        // closure function
         function updateProgress(total, progress) {
             bar.style.width = progress / total * 100 + "%";
             progressLabel.innerText = `${progress}/${total}`;
         }
-
-        //    var allDownloaded = true;
-
-        //    var documentList = [];
-        //    if (selectedDocuments) {
-        //        totalDocuments = selectedDocuments.Count;
-        //        for (var i = 0; i < selectedDocuments.Count; i++) {
-        //            var objDocument = selectedDocuments.Item(i);
-        //            if (objDocument.AttachmentCount > 0) {
-        //                documentList.push(objDocument);
-        //                totalAttachments += objDocument.AttachmentCount;
-        //                console.log(`[${objDocument.Title}] has attachments`);
-        //            } else {
-        //                addLog(`<strong>[${objDocument.Title}]</strong> has NO attachment`)
-        //            }
-        //        }
-        //        console.log(`totalDocuments=${totalDocuments}, totalAttachments=${totalAttachments}`);
-        //        console.log(documentList.length);
-
-        //        if (selectedDocuments) {
-        //            totalDocuments = selectedDocuments.length;
-        //            for (var i = 0; i < selectedDocuments.length; i++) {
-        //                var objDocument = selectedDocuments[i];
-        //                if (objDocument.AttachmentCount > 0) {
-        //                    totalAttachments += objDocument.AttachmentCount;
-        //                    var objAttachments = objDocument.Attachments;
-        //                    for (var j = 0; j < objAttachments.Count; j++) {
-        //                        var objAttachment = objAttachments.Item(j);
-        //
-        //                        if (objAttachment.Downloaded) {
-        //                            // attachment is already downloaded
-        //                            addLog(objDocument.Title, objAttachment.Name, 1);
-        //                        } else {
-        //                            if ((initParam == 3 || initParam == 4 || initParam == 6) &&
-        //                                !isPicture(objAttachment.Name)) {
-        //                                addLog(objDocument.Title, objAttachment.Name, 4);
-        //                                continue;
-        //                            }
-        //                            // start to download attachment
-        //                            addLog(objDocument.Title, objAttachment.Name, 2);
-        //                            objAttachment.CheckAttachmentData(objWindow.HWND);
-        //                            // Double check if it's successful
-        //                            if (objAttachment.Downloaded) {
-        //                                // successfully download attachment
-        //                                addLog(objDocument.Title, objAttachment.Name, 1);
-        //                                totalDownloaded++;
-        //                            } else {
-        //                                // failed to download attachment
-        //                                addLog(objDocument.Title, objAttachment.Name, 3);
-        //                                totalFailed++;
-        //                                //                            allDownloaded = false;
-        //                            }
-        //                        }
-        //                        //                updateProgress(totalAttachments, i + 1);
-        //                    }
-        //                } else {
-        //                    // no attachment
-        //                    addLog(objDocument.Title, "", 0);
-        //                }
-        //            }
-        //        }
-
-        // postpone loading selected documents, so it can load the Web page first
-        timeoutId = setTimeout(loadDocuments, 200);
 
         function loadDocuments() {
             clearTimeout(timeoutId);
             selectedDocuments = getSelectedDocuments(initParam);
             $("#splash").remove();
 
+            // after loading selected documents, enable Interval Timer to start to
+            // process documents
             if (selectedDocuments) {
                 totalDocuments = selectedDocuments.length;
                 $("#totalDocuments").innerText = totalDocuments;
@@ -350,7 +285,6 @@
 
         function processComplete() {
             // Update stats
-            //        $("#totalDocuments").innerText = totalDocuments;
             $("#totalAttachments").innerText = totalAttachments;
             $("#totalDownloaded").innerText = totalDownloaded;
             $("#totalFailed").innerText = totalFailed;
@@ -393,10 +327,8 @@
                             // failed to download attachment
                             addLog(objDocument.Title, objAttachment.Name, 3);
                             totalFailed++;
-                            //                            allDownloaded = false;
                         }
                     }
-                    //                updateProgress(totalAttachments, i + 1);
                 }
             } else {
                 // no attachment
@@ -406,6 +338,9 @@
             numProcessedDocuments++;
             updateProgress(totalDocuments, numProcessedDocuments);
         }
+
+        // postpone loading selected documents, so it can load the Web page first
+        timeoutId = setTimeout(loadDocuments, 200);
     }
 
     document.addEventListener("DOMContentLoaded", function (event) {
