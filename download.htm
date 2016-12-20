@@ -6,13 +6,13 @@
     <title>Download All</title>
     <style>
         #box {
-            height: 360px;
+            height: 330px;
         }
         
         #progressBar {
             position: relative;
             width: 100%;
-            height: 30px;
+            height: 20px;
             background-color: #dddddd;
         }
         
@@ -48,7 +48,7 @@
             height: 100%;
             overflow-y: scroll;
             overflow-x: auto;
-            margin-top: 90px;
+            margin-top: 115px;
         }
         
         #log {
@@ -75,10 +75,20 @@
         .downloading {
             color: blue;
         }
+        
+        #splash {
+            position: absolute;
+            top: 50%;
+            text-align: center;
+            width: 100%;
+        }
     </style>
 </head>
 
 <body>
+    <div id="splash">
+        <h1><span id="labelSplash">Waiting for fetching Documents Data</span></h1>
+    </div>
     <div id="box">
         <div id="info">
             <ul>
@@ -87,17 +97,18 @@
                 <li><span id="labelNumberOfDownloadedAttachments">Number of Downloaded Attachments: </span><span id="totalDownloaded"></span></li>
                 <li><span id="labelNumberOfFailedAttachments">Number of Failed Attachments: </span><span id="totalFailed"></span></li>
             </ul>
+            <div id="progressBar">
+                <div id="progressLabel">0/0</div>
+                <div id="bar">
+                </div>
+            </div>
         </div>
-        <!--
-        <div id="progressBar">
-    <div id="progressLabel">0/0</div>
-    <div id="bar">
-    </div>
-</div>
--->
+
         <div id="logBox">
             <ul id="log"></ul>
+            <div id="logEnd"></div>
         </div>
+
     </div>
 </body>
 <script>
@@ -124,13 +135,6 @@
         }
         return strLanguage
     }
-
-    //    function updateProgress(total, progress) {
-    //        var bar = $("#bar");
-    //        var progressLabel = $("#progressLabel");
-    //        bar.style.width = progress / total * 100 + "%";
-    //        progressLabel.innerText = `${progress}/${total}`;
-    //    }
 
     function parseDocuments(objDocuments) {
         var result = [];
@@ -177,11 +181,6 @@
         return result;
     }
 
-    //    function addLog(logLine) {
-    //        var log = $("#log");
-    //        log.innerHTML += `<li>${logLine}</li>`;
-    //    }
-
 
     // Global variables
     var objApp;
@@ -189,15 +188,46 @@
     var objDocumentsCtrl;
     var objCategoryCtrl;
 
-    function init() {
+    function main() {
         objApp = window.external;
         objWindow = objApp.Window;
         objDocumentsCtrl = objWindow.DocumentsCtrl;
         objCategoryCtrl = objWindow.CategoryCtrl;
 
+        // internationalize web page 
         var pluginPath = objApp.GetPluginPathByScriptFileName("MdPicGlobal.js");
         var languageFileName = pluginPath + "plugin.ini";
         objApp.LocalizeHtmlDocument(languageFileName, WizChromeBrowser);
+
+        /* Variables */
+        // DOM components
+        var bar = $("#bar");
+        var progressLabel = $("#progressLabel");
+        var logEnd = $('#logEnd');
+
+        var selectedDocuments;
+        var timeoutId;
+        var intervalId;
+
+        // stats
+        var totalDocuments = 0;
+        var totalAttachments = 0;
+        var totalDownloaded = 0;
+        var totalFailed = 0;
+
+        var numProcessedDocuments = 0;
+
+        /*
+         * initParam
+         * 1--Select documents and download all attachments
+         * 2--Select folder and download all attachmetns
+         * 3--Select documents and download all picture attachments
+         * 4--Select folder and download all picture attachments
+         * 5--Select All folders (CategoryCtrlAllFolders) and download all attachments
+         * 6--Select All folders (CategoryCtrlAllFolders) and download all picture attachments
+         */
+        var initParam = objWindow.GetHtmlDialogParam(WizChromeBrowser);
+        console.debug(`initParam=${initParam}`);
 
         // pre-load localized string
         var localStrLog0 = getString("log0");
@@ -206,7 +236,7 @@
         var localStrLog3 = getString("log3");
         var localStrLog4 = getString("log4");
 
-        // closure
+        // closure function
         function addLog(documentName, attachmentName, action) {
             var log = $("#log");
             var logLine;
@@ -236,25 +266,11 @@
             }
         }
 
-        /*
-         * initParam
-         * 1--Select documents and download all attachments
-         * 2--Select folder and download all attachmetns
-         * 3--Select documents and download all picture attachments
-         * 4--Select folder and download all picture attachments
-         * 5--Select All folders (CategoryCtrlAllFolders) and download all attachments
-         * 6--Select All folders (CategoryCtrlAllFolders) and download all picture attachments
-         */
-        var initParam = objWindow.GetHtmlDialogParam(WizChromeBrowser);
-        console.debug(`initParam=${initParam}`);
-
-        var selectedDocuments = getSelectedDocuments(initParam);
-
-        //
-        var totalDocuments = 0;
-        var totalAttachments = 0;
-        var totalDownloaded = 0;
-        var totalFailed = 0;
+        // closure function
+        function updateProgress(total, progress) {
+            bar.style.width = progress / total * 100 + "%";
+            progressLabel.innerText = `${progress}/${total}`;
+        }
 
         //    var allDownloaded = true;
 
@@ -274,62 +290,126 @@
         //        console.log(`totalDocuments=${totalDocuments}, totalAttachments=${totalAttachments}`);
         //        console.log(documentList.length);
 
-        if (selectedDocuments) {
-            totalDocuments = selectedDocuments.length;
-            for (var i = 0; i < selectedDocuments.length; i++) {
-                var objDocument = selectedDocuments[i];
-                if (objDocument.AttachmentCount > 0) {
-                    totalAttachments += objDocument.AttachmentCount;
-                    var objAttachments = objDocument.Attachments;
-                    for (var j = 0; j < objAttachments.Count; j++) {
-                        var objAttachment = objAttachments.Item(j);
+        //        if (selectedDocuments) {
+        //            totalDocuments = selectedDocuments.length;
+        //            for (var i = 0; i < selectedDocuments.length; i++) {
+        //                var objDocument = selectedDocuments[i];
+        //                if (objDocument.AttachmentCount > 0) {
+        //                    totalAttachments += objDocument.AttachmentCount;
+        //                    var objAttachments = objDocument.Attachments;
+        //                    for (var j = 0; j < objAttachments.Count; j++) {
+        //                        var objAttachment = objAttachments.Item(j);
+        //
+        //                        if (objAttachment.Downloaded) {
+        //                            // attachment is already downloaded
+        //                            addLog(objDocument.Title, objAttachment.Name, 1);
+        //                        } else {
+        //                            if ((initParam == 3 || initParam == 4 || initParam == 6) &&
+        //                                !isPicture(objAttachment.Name)) {
+        //                                addLog(objDocument.Title, objAttachment.Name, 4);
+        //                                continue;
+        //                            }
+        //                            // start to download attachment
+        //                            addLog(objDocument.Title, objAttachment.Name, 2);
+        //                            objAttachment.CheckAttachmentData(objWindow.HWND);
+        //                            // Double check if it's successful
+        //                            if (objAttachment.Downloaded) {
+        //                                // successfully download attachment
+        //                                addLog(objDocument.Title, objAttachment.Name, 1);
+        //                                totalDownloaded++;
+        //                            } else {
+        //                                // failed to download attachment
+        //                                addLog(objDocument.Title, objAttachment.Name, 3);
+        //                                totalFailed++;
+        //                                //                            allDownloaded = false;
+        //                            }
+        //                        }
+        //                        //                updateProgress(totalAttachments, i + 1);
+        //                    }
+        //                } else {
+        //                    // no attachment
+        //                    addLog(objDocument.Title, "", 0);
+        //                }
+        //            }
+        //        }
 
-                        if (objAttachment.Downloaded) {
-                            // attachment is already downloaded
-                            addLog(objDocument.Title, objAttachment.Name, 1);
-                        } else {
-                            if ((initParam == 3 || initParam == 4 || initParam == 6) &&
-                                !isPicture(objAttachment.Name)) {
-                                addLog(objDocument.Title, objAttachment.Name, 4);
-                                continue;
-                            }
-                            // start to download attachment
-                            addLog(objDocument.Title, objAttachment.Name, 2);
-                            objAttachment.CheckAttachmentData(objWindow.HWND);
-                            // Double check if it's successful
-                            if (objAttachment.Downloaded) {
-                                // successfully download attachment
-                                addLog(objDocument.Title, objAttachment.Name, 1);
-                                totalDownloaded++;
-                            } else {
-                                // failed to download attachment
-                                addLog(objDocument.Title, objAttachment.Name, 3);
-                                totalFailed++;
-                                //                            allDownloaded = false;
-                            }
-                        }
-                        //                updateProgress(totalAttachments, i + 1);
-                    }
-                } else {
-                    // no attachment
-                    addLog(objDocument.Title, "", 0);
-                }
+        // postpone loading selected documents, so it can load the Web page first
+        timeoutId = setTimeout(loadDocuments, 200);
+
+        function loadDocuments() {
+            clearTimeout(timeoutId);
+            selectedDocuments = getSelectedDocuments(initParam);
+            $("#splash").remove();
+
+            if (selectedDocuments) {
+                totalDocuments = selectedDocuments.length;
+                $("#totalDocuments").innerText = totalDocuments;
+                intervalId = setInterval(process, 1);
             }
         }
-        // Update stats
-        $("#totalDocuments").innerText = totalDocuments;
-        $("#totalAttachments").innerText = totalAttachments;
-        $("#totalDownloaded").innerText = totalDownloaded;
-        $("#totalFailed").innerText = totalFailed;
 
-        if (totalFailed == 0) {
-            var strHint = getString("hintAllDownload");
-            objWindow.ShowMessage(strHint, "", 0);
+        function processComplete() {
+            // Update stats
+            //        $("#totalDocuments").innerText = totalDocuments;
+            $("#totalAttachments").innerText = totalAttachments;
+            $("#totalDownloaded").innerText = totalDownloaded;
+            $("#totalFailed").innerText = totalFailed;
+            if (totalFailed == 0) {
+                var strHint = getString("hintAllDownload");
+                objWindow.ShowMessage(strHint, "", 0);
+            }
+        }
+
+        function process() {
+            if (selectedDocuments.length == 0) {
+                clearInterval(intervalId);
+                processComplete();
+                return;
+            }
+            var objDocument = selectedDocuments.shift();
+            if (objDocument.AttachmentCount > 0) {
+                totalAttachments += objDocument.AttachmentCount;
+                var objAttachments = objDocument.Attachments;
+                for (var j = 0; j < objAttachments.Count; j++) {
+                    var objAttachment = objAttachments.Item(j);
+                    if (objAttachment.Downloaded) {
+                        // attachment is already downloaded
+                        addLog(objDocument.Title, objAttachment.Name, 1);
+                    } else {
+                        if ((initParam == 3 || initParam == 4 || initParam == 6) &&
+                            !isPicture(objAttachment.Name)) {
+                            addLog(objDocument.Title, objAttachment.Name, 4);
+                            continue;
+                        }
+                        // start to download attachment
+                        addLog(objDocument.Title, objAttachment.Name, 2);
+                        objAttachment.CheckAttachmentData(objWindow.HWND);
+                        // Double check if it's successful
+                        if (objAttachment.Downloaded) {
+                            // successfully download attachment
+                            addLog(objDocument.Title, objAttachment.Name, 1);
+                            totalDownloaded++;
+                        } else {
+                            // failed to download attachment
+                            addLog(objDocument.Title, objAttachment.Name, 3);
+                            totalFailed++;
+                            //                            allDownloaded = false;
+                        }
+                    }
+                    //                updateProgress(totalAttachments, i + 1);
+                }
+            } else {
+                // no attachment
+                addLog(objDocument.Title, "", 0);
+            }
+            logEnd.scrollIntoView();
+            numProcessedDocuments++;
+            updateProgress(totalDocuments, numProcessedDocuments);
         }
     }
 
     document.addEventListener("DOMContentLoaded", function (event) {
-        init();
+        main();
     });
 </script>
 
