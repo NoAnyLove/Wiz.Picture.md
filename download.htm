@@ -165,6 +165,12 @@
             } else {
                 alert("No Selected Folder");
             }
+        } else if (initParam == 5 || initParam == 6) { // Select All Folders
+            var objFolders = objApp.Database.Folders;
+            result = [];
+            for (var i = 0; i < objFolders.Count; i++) {
+                result = result.concat(getDocumentsFromFolder(objFolders.Item(i)));
+            }
         } else {
             alert("Error initParam");
         }
@@ -228,6 +234,8 @@
      * 2--Select folder and download all attachmetns
      * 3--Select documents and download all picture attachments
      * 4--Select folder and download all picture attachments
+     * 5--Select All folders (CategoryCtrlAllFolders) and download all attachments
+     * 6--Select All folders (CategoryCtrlAllFolders) and download all picture attachments
      */
     var initParam = objWindow.GetHtmlDialogParam(WizChromeBrowser);
     console.debug(`initParam=${initParam}`);
@@ -272,7 +280,8 @@
                         // attachment is already downloaded
                         addLog(objDocument.Title, objAttachment.Name, 1);
                     } else {
-                        if ((initParam == 3 || initParam == 4) && !isPicture(objAttachment.Name)) {
+                        if ((initParam == 3 || initParam == 4 || initParam == 6) &&
+                            !isPicture(objAttachment.Name)) {
                             addLog(objDocument.Title, objAttachment.Name, 4);
                             continue;
                         }
