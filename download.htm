@@ -153,12 +153,14 @@
     }
 
     function getSelectedDocuments(initParam) {
+        var strNoSelectedDocuments = getString('strNoSelectedDocuments');
+        var strNoSelectedFolder = getString('strNoSelectedFolder');
         var selectedDocuments = null;
         var result = [];
         if (initParam == 1 || initParam == 3) { // Select Documents
             selectedDocuments = objDocumentsCtrl.SelectedDocuments;
             if (selectedDocuments.Count == 0) {
-                alert("No Selected Documents");
+                alert(strNoSelectedDocuments);
             } else {
                 result = parseDocuments(selectedDocuments);
             }
@@ -166,7 +168,7 @@
             if (objCategoryCtrl.SelectedFolder) {
                 result = getDocumentsFromFolder(objCategoryCtrl.SelectedFolder);
             } else {
-                alert("No Selected Folder");
+                alert(strNoSelectedFolder);
             }
         } else if (initParam == 5 || initParam == 6) { // Select All Folders
             var objFolders = objApp.Database.Folders;
@@ -276,7 +278,7 @@
 
             // after loading selected documents, enable Interval Timer to start to
             // process documents
-            if (selectedDocuments) {
+            if (selectedDocuments.length != 0) {
                 totalDocuments = selectedDocuments.length;
                 $("#totalDocuments").innerText = totalDocuments;
                 intervalId = setInterval(process, 1);
