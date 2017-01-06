@@ -42,7 +42,7 @@ function MdPic_update_img(attachments) {
     var images = document.getElementsByTagName('img');
     try {
         for (var i = 0; i < images.length; i++) {
-            var name = images[i].src.replace("http://wiz/", "");
+            var name = decodeURIComponent(images[i].src.replace("http://wiz/", ""));
             if (name in attachments) {
                 // if AutoDownloadPicture=1, make sure this picture attachment is downloaded
                 if (MdPic_config_autodownload) {
