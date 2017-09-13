@@ -12,12 +12,26 @@ function MdPic_init(app, pluginBrowser) {
     var attachments = MdPic_get_attachments();
 
     /*
+     * In Wiz 4.9.x, the plugin is been called after the Markdown page is rendered,
+     * thus the MutationObserver will not be triggered. We try to replace the image
+     * when plugin is loaded.
+     */
+    if (document.readyState == "complete") {
+        MdPic_update_img(attachments);
+    }
+
+    /*
+     * Before Wiz 4.9.x:
+     *
      * Wiz Markdown Rendering doesn't offer a callback when rendering is complete.
      * So we use MutationObserver to monitor the rendering process.
      */
     var observer = new MutationObserver(function (mutations) {
+        console.log('MutationObserver');
+        console.log(mutations);
         MdPic_update_img(attachments);
     });
+
     var config = {
         childList: true,
         subtree: true
